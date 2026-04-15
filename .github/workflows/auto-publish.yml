@@ -1,0 +1,68 @@
+name: Auto Publish to DEV.to & LinkedIn
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/summary.md'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find latest summary.md
+        id: find_summary
+        run: |
+          # 가장 최근 날짜 폴더의 summary.md 찾기
+          SUMMARY=$(find . -name 'summary.md' -path '*/20*/*' | sort -r | head -1)
+          if [ -z "$SUMMARY" ]; then
+            echo "No summary.md found"
+            exit 0
+          fi
+          echo "summary_path=$SUMMARY" >> "$GITHUB_OUTPUT"
+
+          # 날짜 추출
+          DATE_DIR=$(dirname "$SUMMARY" | sed 's|^\./||')
+          echo "date_dir=$DATE_DIR" >> "$GITHUB_OUTPUT"
+          echo "Found: $SUMMARY"
+
+      - name: Set up Python
+        if: steps.find_summary.outputs.summary_path
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.find_summary.outputs.summary_path
+        run: pip install requests pyyaml
+
+      - name: Publish to DEV.to
+        if: steps.find_summary.outputs.summary_path && vars.ENABLE_DEVTO == 'true'
+        env:
+          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+          SUMMARY_PATH: ${{ steps.find_summary.outputs.summary_path }}
+        run: python scripts/publish_devto.py "$SUMMARY_PATH"
+
+      - name: Publish to LinkedIn
+        if: steps.find_summary.outputs.summary_path && vars.ENABLE_LINKEDIN == 'true'
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_PERSON_ID: ${{ secrets.LINKEDIN_PERSON_ID }}
+          SUMMARY_PATH: ${{ steps.find_summary.outputs.summary_path }}
+        run: python scripts/publish_linkedin.py "$SUMMARY_PATH"
+
+      - name: Update README
+        if: steps.find_summary.outputs.summary_path
+        env:
+          DATE_DIR: ${{ steps.find_summary.outputs.date_dir }}
+          SUMMARY_PATH: ${{ steps.find_summary.outputs.summary_path }}
+        run: |
+          python scripts/update_readme.py "$SUMMARY_PATH"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "docs: update README with $DATE_DIR learning log"
+          git push
