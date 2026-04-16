@@ -12,7 +12,7 @@
 $AppId = "Nous-Zero.MorningRoutine"
 
 $ToastXml = @"
-<toast>
+<toast duration="long" scenario="alarm">
     <visual>
         <binding template="ToastGeneric">
             <text>☀️ 좋은 아침! 오늘도 화이팅</text>
@@ -20,7 +20,10 @@ $ToastXml = @"
             <text>Phase0 기초 학습 시간입니다 📚</text>
         </binding>
     </visual>
-    <audio src="ms-winsoundevent:Notification.Default" />
+    <audio src="ms-winsoundevent:Notification.Looping.Alarm" loop="true" />
+    <actions>
+        <action content="확인" arguments="dismiss" />
+    </actions>
 </toast>
 "@
 
