@@ -10,14 +10,25 @@
 
 시작 메뉴에서 `PowerShell` 검색 → **Windows PowerShell** 실행 (관리자 권한 불필요)
 
-### 2. 스크립트 실행
-
-아래 명령을 복사해서 붙여넣고 엔터:
+### 2. 작업 스케줄러 등록
 
 ```powershell
 cd "C:\Users\745ra\nous-zero-journey"
 powershell -ExecutionPolicy Bypass -File ".\scripts\setup-morning-routine.ps1"
 ```
+
+### 3. Wake Timer + 잠금 화면 알림 설정 (권장)
+
+절전 모드에서 자동으로 깨어나고, 잠금 화면에서도 알림이 울리게 합니다:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\scripts\setup-wake-and-notifications.ps1"
+```
+
+이 스크립트가 설정하는 것:
+- ✅ Wake Timer 활성화 (절전에서 자동 기상)
+- ✅ 잠금 화면에 알림 표시 허용
+- ✅ 알림 소리 활성화
 
 ### 3. 확인
 
