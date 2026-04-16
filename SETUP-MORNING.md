@@ -2,12 +2,13 @@
 
 매일 아침 **7시**에 자동으로:
 - 💻 Windows 알림 표시 (알람 소리 반복)
-- 🌐 Chrome에서 **4개 탭** 열기:
+- 🌐 Chrome에서 **3개 탭** 열기:
   - **탭 1 - LeetCode**: CLAUDE.md 로드맵에서 다음에 풀 문제의 페이지
-  - **탭 2 - Colab 템플릿**: `daily-study-template.ipynb` 새 작업용 (+ Gemini 질문 가능)
+  - **탭 2 - Colab 템플릿**: `daily-study-template.ipynb` 새 작업용
   - **탭 3 - GitHub**: 레포 메인
-  - **탭 4 - 본인이 작성한 한글 주석 노트북**: 스타일 참고 + 이해 보조용
-- 📝 **VS Code에서 GDPO.py의 다음 주석 구간으로 바로 점프**
+- 📝 **VS Code에서 두 파일 동시 열기**:
+  - 왼쪽: 원본 GDPO.py (다음 주석 구간으로 자동 점프)
+  - 오른쪽: 한글 주석 학습용 파일 (Claude CLI가 자동 생성, 색상 구분)
 
 ## GDPO 학습 흐름 (Claude CLI 자동 생성)
 

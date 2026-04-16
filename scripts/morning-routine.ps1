@@ -1,45 +1,16 @@
 ﻿# ================================================
 # 아침 학습 루틴 - 매일 아침 자동 실행
 # - Windows 알림 표시
-# - Chrome에서 4개 탭 열기:
+# - Chrome에서 3개 탭 열기:
 #   1. LeetCode: CLAUDE.md에서 찾은 오늘의 문제 페이지
 #   2. Colab: daily-study-template.ipynb 직접 로드
 #   3. GitHub: 레포 메인
-#   4. 본인이 작성한 가장 최근 한글 주석 GDPO 노트북 (참고 자료)
-# - VS Code: 원본 GDPO.py 다음 주석 구간으로 자동 점프
+# - VS Code: 원본 GDPO.py + 한글 주석 학습용 파일 함께 열기
 # ================================================
 
-$RepoRoot        = Split-Path $PSScriptRoot -Parent
-$ClaudeMd        = Join-Path $RepoRoot "CLAUDE.md"
-$GdpoPath        = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO.py"
-$GdpoNotebookDir = Join-Path $RepoRoot "Phase0_기초\GDPO_주석"
-
-# URL 경로 인코딩 함수 (한글/특수문자 포함된 경로 처리)
-function ConvertTo-UrlPath([string]$path) {
-    $parts = $path -replace '\\', '/' -split '/'
-    $encoded = $parts | ForEach-Object {
-        if ($_) { [uri]::EscapeDataString($_) } else { '' }
-    }
-    return ($encoded -join '/')
-}
-
-# --- 본인이 작성한 가장 최근 한글 주석 노트북 찾기 ---
-# 이 노트북이 새 구간 주석 작성시 '스타일 참고'와 '이해 보조' 역할을 함
-$LatestGdpoNotebookUrl  = "https://github.com/nous-zero/nous-zero-journey/tree/main/Phase0_%EA%B8%B0%EC%B4%88/GDPO_%EC%A3%BC%EC%84%9D"
-$LatestGdpoNotebookName = $null
-
-if (Test-Path $GdpoNotebookDir) {
-    $latestNb = Get-ChildItem -Path $GdpoNotebookDir -Filter "*.ipynb" -ErrorAction SilentlyContinue |
-                Sort-Object Name -Descending |
-                Select-Object -First 1
-    if ($latestNb) {
-        $LatestGdpoNotebookName = $latestNb.Name
-        $relPath = "Phase0_기초/GDPO_주석/$($latestNb.Name)"
-        $encodedRel = ConvertTo-UrlPath $relPath
-        # Colab에서 GitHub 파일 직접 로드 (읽기 + 스크롤 가능)
-        $LatestGdpoNotebookUrl = "https://colab.research.google.com/github/nous-zero/nous-zero-journey/blob/main/$encodedRel"
-    }
-}
+$RepoRoot = Split-Path $PSScriptRoot -Parent
+$ClaudeMd = Join-Path $RepoRoot "CLAUDE.md"
+$GdpoPath = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO.py"
 
 
 # --- LeetCode 문제 번호 -> URL slug 매핑 (CLAUDE.md 로드맵 전체) ---
@@ -148,10 +119,6 @@ if ($NextGdpoLine) {
 } else {
     Write-Host "📖 GDPO: 모든 구간 완료! 🎉"
 }
-if ($LatestGdpoNotebookName) {
-    Write-Host "📘 한글 주석 참고 노트북: $LatestGdpoNotebookName"
-}
-
 # --- 1. Windows Toast 알림 ---
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
 [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
@@ -169,7 +136,7 @@ $ToastXml = @"
         <binding template="ToastGeneric">
             <text>☀️ 좋은 아침 Hoony님! 오늘도 화이팅</text>
             <text>오늘의 문제: $SafeLabel</text>
-            <text>$SafeGdpo · LeetCode · Colab · GitHub · 한글주석 참고 노트북 열림 📚</text>
+            <text>$SafeGdpo · LeetCode · Colab · GitHub 열림 📚</text>
         </binding>
     </visual>
     <audio src="ms-winsoundevent:Notification.Looping.Alarm" loop="true" />
@@ -199,16 +166,14 @@ try {
     $Notify.Dispose()
 }
 
-# --- 2. Chrome에서 4개 탭을 한 창에 열기 ---
+# --- 2. Chrome에서 3개 탭을 한 창에 열기 ---
 # 탭 1: LeetCode 오늘의 문제
-# 탭 2: Colab 빈 템플릿 (새 작업 + Gemini 질문용)
-# 탭 3: GitHub 레포 메인
-# 탭 4: 본인이 작성한 가장 최근 한글 주석 노트북 (스타일 참고 + 이해 보조)
+# 탭 2: Colab 빈 템플릿 (새 작업용)
+# 탭 3: GitHub 레포 메인 (과거 주석 노트북은 여기서 탐색)
 $Urls = @(
     $LeetCodeUrl,
     "https://colab.research.google.com/github/nous-zero/nous-zero-journey/blob/main/templates/daily-study-template.ipynb",
-    "https://github.com/nous-zero/nous-zero-journey",
-    $LatestGdpoNotebookUrl
+    "https://github.com/nous-zero/nous-zero-journey"
 )
 
 $ChromePaths = @(
@@ -220,7 +185,7 @@ $ChromeExe = $ChromePaths | Where-Object { Test-Path $_ } | Select-Object -First
 
 if ($ChromeExe) {
     Start-Process -FilePath $ChromeExe -ArgumentList (@("--new-window") + $Urls)
-    Write-Host "✅ Chrome에서 4개 탭 열기 완료"
+    Write-Host "✅ Chrome에서 3개 탭 열기 완료"
 } else {
     foreach ($url in $Urls) {
         Start-Process $url
