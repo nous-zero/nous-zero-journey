@@ -46,9 +46,9 @@ Colab 학습 -> 마지막 셀 실행 -> GitHub push
 
 | 주제 | 파일 수 |
 |------|---------|
-| [Array](Phase0_기초/Array/) | 0 |
+| [Array](Phase0_기초/Array/) | 1 |
 | [BinarySearch](Phase0_기초/BinarySearch/) | 0 |
-| [GDPO_주석](Phase0_기초/GDPO_주석/) | 1 |
+| [GDPO_주석](Phase0_기초/GDPO_주석/) | 2 |
 | [HashMap](Phase0_기초/HashMap/) | 0 |
 | [LinkedList](Phase0_기초/LinkedList/) | 0 |
 | [Stack](Phase0_기초/Stack/) | 0 |
@@ -58,5 +58,6 @@ Colab 학습 -> 마지막 셀 실행 -> GitHub push
 
 | 날짜 | 내용 |
 |------|------|
+| [2026-04-16](logs/2026-04-16/summary.md) | [2026-04-16] GDPO.py 51~100줄 주석 / LeetCode #217 Contains Duplicate |
 | [2026-04-15](logs/2026-04-15/summary.md) | [2026-04-15] GDPO.py 51~100줄 주석 / LeetCode #20 |
 
