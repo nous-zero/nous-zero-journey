@@ -36,6 +36,7 @@ Colab 학습 -> 마지막 셀 실행 -> GitHub push
 ```
 
 설정 방법은 [SETUP.md](SETUP.md)를 참고하세요.
+매일 아침 자동 루틴(알림 + 브라우저 자동 오픈)은 [SETUP-MORNING.md](SETUP-MORNING.md)를 참고하세요.
 
 ## 목표
 - LeetCode Easy 30문제
