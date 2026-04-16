@@ -6,6 +6,11 @@
 # - GDPO_학습용_{범위}.py로 저장
 # ================================================
 
+# UTF-8 인코딩 강제 (PowerShell 5.1이 기본 ANSI로 한글 보내면 깨짐)
+$OutputEncoding = New-Object System.Text.UTF8Encoding $false
+[Console]::OutputEncoding = $OutputEncoding
+[Console]::InputEncoding  = $OutputEncoding
+
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $ClaudeMd = Join-Path $RepoRoot "CLAUDE.md"
 $GdpoPath = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO.py"
@@ -102,8 +107,10 @@ if (-not $claudeCmd) {
 Write-Host "🤖 Claude CLI 호출 중... (20~60초 소요)"
 
 # --- Claude CLI 실행 ---
+# 한글 프롬프트는 파이프(|)로 보내면 PowerShell이 ANSI로 인코딩해 깨짐.
+# argument로 직접 전달하면 UTF-8 유지됨.
 try {
-    $result = $prompt | & claude -p 2>&1 | Out-String
+    $result = & claude -p $prompt 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Claude CLI 실행 실패 (exit $LASTEXITCODE)" -ForegroundColor Red
         Write-Host $result
