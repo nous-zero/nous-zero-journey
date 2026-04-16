@@ -113,10 +113,12 @@ if (Test-Path $ClaudeMd) {
 
         # GDPO: 🔲 상태(미완료) 첫 번째 행
         if ($section -eq "gdpo" -and $line -match "🔲" -and -not $NextGdpoLine) {
-            # 예: "| 101줄~ | 🔲 |" 또는 "| 101~150줄 | 🔲 |"
+            # 지원 형식: "| 101~150줄 | 🔲 |", "| 101줄~ | 🔲 |", "| 101줄부터 | 🔲 |"
+            # 1단계: 첫 번째 숫자 추출 (시작 라인)
             if ($line -match '\|\s*(\d+)') {
                 $NextGdpoLine = $matches[1]
-                if ($line -match '\|\s*([\d~줄-]+)\s*\|') {
+                # 2단계: | 와 | 사이의 텍스트 전체를 범위 표기로 저장
+                if ($line -match '\|\s*([^|]+?)\s*\|\s*🔲') {
                     $NextGdpoRange = $matches[1].Trim()
                 }
             }
