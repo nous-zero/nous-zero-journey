@@ -13,11 +13,11 @@ import glob
 
 
 def get_all_study_logs():
-    """모든 날짜 폴더의 summary.md에서 학습 로그를 수집"""
+    """logs/ 안의 모든 날짜 폴더의 summary.md에서 학습 로그를 수집"""
     logs = []
 
-    for summary_path in sorted(glob.glob("*/summary.md"), reverse=True):
-        date_dir = os.path.dirname(summary_path)
+    for summary_path in sorted(glob.glob("logs/*/summary.md"), reverse=True):
+        date_dir = os.path.basename(os.path.dirname(summary_path))
 
         with open(summary_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -28,9 +28,30 @@ def get_all_study_logs():
         if match:
             title = match.group(1)
 
-        logs.append({"date": date_dir, "title": title})
+        logs.append({
+            "date": date_dir,
+            "title": title,
+            "log_path": summary_path.replace(os.sep, "/"),
+        })
 
     return logs[:10]  # 최근 10개만
+
+
+def count_topic_files():
+    """주제별 학습 파일 수 집계"""
+    topics = {}
+    phase_dir = "Phase0_기초"
+    if not os.path.isdir(phase_dir):
+        return topics
+
+    for topic in sorted(os.listdir(phase_dir)):
+        topic_path = os.path.join(phase_dir, topic)
+        if not os.path.isdir(topic_path):
+            continue
+        # .ipynb 파일 수 세기
+        count = len(glob.glob(os.path.join(topic_path, "*.ipynb")))
+        topics[topic] = count
+    return topics
 
 
 def update_readme(logs):
@@ -43,35 +64,39 @@ def update_readme(logs):
     else:
         existing = ""
 
+    # 주제별 진도 섹션
+    topics = count_topic_files()
+    topic_section = ""
+    if topics:
+        topic_section = "## 주제별 진도\n\n"
+        topic_section += "| 주제 | 파일 수 |\n"
+        topic_section += "|------|---------|\n"
+        for topic, count in topics.items():
+            topic_section += f"| [{topic}](Phase0_기초/{topic}/) | {count} |\n"
+        topic_section += "\n"
+
     # 학습 로그 섹션 생성
-    log_section = "## 최근 학습 기록\n\n"
+    log_section = topic_section + "## 최근 학습 기록\n\n"
     log_section += "| 날짜 | 내용 |\n"
     log_section += "|------|------|\n"
 
     for log in logs:
-        log_section += f"| {log['date']} | {log['title']} |\n"
+        log_section += f"| [{log['date']}]({log['log_path']}) | {log['title']} |\n"
 
     log_section += "\n"
 
-    # 기존 학습 로그 섹션이 있으면 교체, 없으면 추가
-    marker_start = "## 최근 학습 기록"
-    marker_end_pattern = r"\n## (?!최근 학습)"
+    # 기존 자동 생성 섹션이 있으면 교체, 없으면 추가
+    # "## 주제별 진도"부터 끝까지(또는 다음 비-자동 섹션까지) 교체
+    start_marker = "## 주제별 진도"
+    alt_marker = "## 최근 학습 기록"
 
-    if marker_start in existing:
-        # 기존 섹션 교체
-        parts = existing.split(marker_start, 1)
-        after_section = parts[1]
-
-        # 다음 ## 헤딩 찾기
-        next_heading = re.search(marker_end_pattern, after_section)
-        if next_heading:
-            rest = after_section[next_heading.start():]
-        else:
-            rest = ""
-
-        new_readme = parts[0] + log_section + rest
+    if start_marker in existing:
+        idx = existing.index(start_marker)
+        new_readme = existing[:idx].rstrip() + "\n\n" + log_section
+    elif alt_marker in existing:
+        idx = existing.index(alt_marker)
+        new_readme = existing[:idx].rstrip() + "\n\n" + log_section
     else:
-        # 섹션 추가
         new_readme = existing.rstrip() + "\n\n" + log_section
 
     with open(readme_path, "w", encoding="utf-8") as f:
