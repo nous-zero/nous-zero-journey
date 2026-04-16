@@ -229,7 +229,32 @@ if ($ChromeExe) {
     Write-Host "⚠️ Chrome을 찾지 못해 기본 브라우저로 열었습니다"
 }
 
-# --- 3. VS Code로 GDPO.py 해당 라인으로 바로 점프 ---
+# --- 3a. 학습용 한글 주석 파일 자동 생성 (Claude CLI 사용) ---
+$StudyFile = $null
+if ($NextGdpoLine) {
+    # 종료 라인 계산 (CLAUDE.md에서 "101~150줄" 파싱)
+    $NextGdpoEnd = $null
+    if ($NextGdpoRange -match '(\d+)\s*~\s*(\d+)') {
+        $NextGdpoEnd = [int]$matches[2]
+    } else {
+        $NextGdpoEnd = [int]$NextGdpoLine + 49
+    }
+    $StudyFile = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO_학습용_${NextGdpoLine}-${NextGdpoEnd}.py"
+
+    if (-not (Test-Path $StudyFile)) {
+        Write-Host ""
+        Write-Host "🤖 학습용 한글 주석 파일 생성 중 (처음 한 번, 20~60초 소요)..."
+        try {
+            & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "generate-gdpo-study.ps1")
+        } catch {
+            Write-Host "⚠️ 학습용 파일 생성 실패: $_" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "📘 학습용 파일 준비됨: GDPO_학습용_${NextGdpoLine}-${NextGdpoEnd}.py"
+    }
+}
+
+# --- 3b. VS Code로 GDPO.py 해당 라인으로 바로 점프 + 학습용 파일 함께 열기 ---
 if (Test-Path $GdpoPath) {
     # VS Code 실행 파일 찾기 (설치 위치가 다양함)
     $VSCodePaths = @(
@@ -242,10 +267,18 @@ if (Test-Path $GdpoPath) {
     if ($VSCodeExe) {
         # 공백 포함 경로는 반드시 따옴표로 감싸야 VS Code가 단일 인수로 인식
         if ($NextGdpoLine) {
-            # -g 플래그로 특정 라인으로 점프
+            # -g 플래그로 원본 파일의 특정 라인으로 점프
             $gdpoArg = '"{0}:{1}"' -f $GdpoPath, $NextGdpoLine
-            Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg
-            Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine 열기 완료"
+            # 학습용 파일이 생성되어 있으면 함께 열기 (오른쪽 탭)
+            if ($StudyFile -and (Test-Path $StudyFile)) {
+                $studyArg = '"{0}"' -f $StudyFile
+                # VS Code는 -g 뒤 첫 파일에 점프, 추가 파일은 별도 탭으로
+                Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg, $studyArg
+                Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine + 학습용 파일 함께 열기 완료"
+            } else {
+                Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg
+                Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine 열기 완료"
+            }
         } else {
             $gdpoArg = '"{0}"' -f $GdpoPath
             Start-Process -FilePath $VSCodeExe -ArgumentList $gdpoArg
