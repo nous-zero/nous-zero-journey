@@ -7,9 +7,36 @@
 #   3. GitHub: 레포 메인
 # ================================================
 
-$RepoRoot   = Split-Path $PSScriptRoot -Parent
-$ClaudeMd   = Join-Path $RepoRoot "CLAUDE.md"
-$GdpoPath   = "C:\Users\745ra\AIGEN\GDPO.py"
+$RepoRoot        = Split-Path $PSScriptRoot -Parent
+$ClaudeMd        = Join-Path $RepoRoot "CLAUDE.md"
+$GdpoPath        = "C:\Users\745ra\AIGEN\GDPO.py"
+$GdpoNotebookDir = Join-Path $RepoRoot "Phase0_기초\GDPO_주석"
+
+# URL 경로 인코딩 함수 (한글/특수문자 포함된 경로 처리)
+function ConvertTo-UrlPath([string]$path) {
+    $parts = $path -replace '\\', '/' -split '/'
+    $encoded = $parts | ForEach-Object {
+        if ($_) { [uri]::EscapeDataString($_) } else { '' }
+    }
+    return ($encoded -join '/')
+}
+
+# --- 가장 최근의 한글 주석 GDPO 노트북 찾기 ---
+$LatestGdpoNotebookUrl  = "https://github.com/nous-zero/nous-zero-journey/tree/main/Phase0_%EA%B8%B0%EC%B4%88/GDPO_%EC%A3%BC%EC%84%9D"
+$LatestGdpoNotebookName = $null
+
+if (Test-Path $GdpoNotebookDir) {
+    $latestNb = Get-ChildItem -Path $GdpoNotebookDir -Filter "*.ipynb" -ErrorAction SilentlyContinue |
+                Sort-Object Name -Descending |
+                Select-Object -First 1
+    if ($latestNb) {
+        $LatestGdpoNotebookName = $latestNb.Name
+        $relPath = "Phase0_기초/GDPO_주석/$($latestNb.Name)"
+        $encodedRel = ConvertTo-UrlPath $relPath
+        # Colab에서 GitHub 파일 직접 로드 (편집 가능)
+        $LatestGdpoNotebookUrl = "https://colab.research.google.com/github/nous-zero/nous-zero-journey/blob/main/$encodedRel"
+    }
+}
 
 # --- LeetCode 문제 번호 -> URL slug 매핑 (CLAUDE.md 로드맵 전체) ---
 $ProblemSlugs = @{
@@ -115,6 +142,11 @@ if ($NextGdpoLine) {
 } else {
     Write-Host "📖 GDPO: 모든 구간 완료! 🎉"
 }
+if ($LatestGdpoNotebookName) {
+    Write-Host "📘 한글 주석 참고 노트북: $LatestGdpoNotebookName"
+} else {
+    Write-Host "📘 한글 주석 노트북: 없음 (첫 작업)"
+}
 
 # --- 1. Windows Toast 알림 ---
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
@@ -133,7 +165,7 @@ $ToastXml = @"
         <binding template="ToastGeneric">
             <text>☀️ 좋은 아침 Hoony님! 오늘도 화이팅</text>
             <text>오늘의 문제: $SafeLabel</text>
-            <text>$SafeGdpo · LeetCode · Colab · GitHub을 열었습니다 📚</text>
+            <text>$SafeGdpo · LeetCode · Colab · GitHub · 한글주석 노트북 열림 📚</text>
         </binding>
     </visual>
     <audio src="ms-winsoundevent:Notification.Looping.Alarm" loop="true" />
@@ -163,11 +195,16 @@ try {
     $Notify.Dispose()
 }
 
-# --- 2. Chrome에서 3개 탭을 한 창에 열기 ---
+# --- 2. Chrome에서 4개 탭을 한 창에 열기 ---
+# 탭 1: LeetCode 오늘의 문제
+# 탭 2: Colab 빈 템플릿 (새 작업용)
+# 탭 3: GitHub 레포 메인
+# 탭 4: 가장 최근 한글 주석 GDPO 노트북 (참고용, 한글 주석 스타일 확인)
 $Urls = @(
     $LeetCodeUrl,
     "https://colab.research.google.com/github/nous-zero/nous-zero-journey/blob/main/templates/daily-study-template.ipynb",
-    "https://github.com/nous-zero/nous-zero-journey"
+    "https://github.com/nous-zero/nous-zero-journey",
+    $LatestGdpoNotebookUrl
 )
 
 $ChromePaths = @(
@@ -179,7 +216,7 @@ $ChromeExe = $ChromePaths | Where-Object { Test-Path $_ } | Select-Object -First
 
 if ($ChromeExe) {
     Start-Process -FilePath $ChromeExe -ArgumentList (@("--new-window") + $Urls)
-    Write-Host "✅ Chrome에서 3개 탭 열기 완료"
+    Write-Host "✅ Chrome에서 4개 탭 열기 완료"
 } else {
     foreach ($url in $Urls) {
         Start-Process $url

@@ -2,10 +2,11 @@
 
 매일 아침 **7시**에 자동으로:
 - 💻 Windows 알림 표시 (알람 소리 반복)
-- 🌐 Chrome에서 3개 탭 열기:
-  - **LeetCode**: CLAUDE.md 로드맵에서 다음에 풀 문제의 페이지
-  - **Colab**: `daily-study-template.ipynb` 바로 열림
-  - **GitHub**: 레포 메인
+- 🌐 Chrome에서 **4개 탭** 열기:
+  - **탭 1 - LeetCode**: CLAUDE.md 로드맵에서 다음에 풀 문제의 페이지
+  - **탭 2 - Colab 템플릿**: `daily-study-template.ipynb` 새 작업용
+  - **탭 3 - GitHub**: 레포 메인
+  - **탭 4 - GDPO 한글 주석 노트북**: 가장 최근에 작성한 한글 주석 GDPO 노트북 (Colab에서 열림 — 참고용)
 - 📝 **VS Code에서 GDPO.py의 다음 주석 구간으로 바로 점프**
   - 예: CLAUDE.md의 "101줄~ 🔲"를 읽고 VS Code가 101번 라인으로 커서 이동
 
