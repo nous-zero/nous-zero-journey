@@ -1,8 +1,23 @@
 # 아침 학습 루틴 자동 설정
 
 매일 아침 **7시**에 자동으로:
-- 💻 Windows 알림 표시
-- 🌐 Chrome에서 3개 탭 열기 (LeetCode, Colab, GitHub)
+- 💻 Windows 알림 표시 (알람 소리 반복)
+- 🌐 Chrome에서 3개 탭 열기:
+  - **LeetCode**: `CURRENT_TOPIC.txt`에 적힌 주제의 태그 페이지
+  - **Colab**: `daily-study-template.ipynb` 바로 열림
+  - **GitHub**: 레포 메인
+
+## 학습 주제 바꾸기
+
+레포 루트의 `CURRENT_TOPIC.txt` 파일을 수정하면 됩니다:
+
+```
+Array
+```
+
+바꿀 수 있는 값: `Array` / `String` / `Stack` / `LinkedList` / `HashMap` / `BinarySearch` / `GDPO_주석`
+
+다음날 아침부터 자동으로 새 주제의 LeetCode 페이지가 열립니다.
 
 ## 설정 방법 (1회만 실행)
 
@@ -85,7 +100,10 @@ Unregister-ScheduledTask -TaskName "NousZero-MorningRoutine" -Confirm:$false
 
 ### 알림이 안 뜸
 - Windows 설정 > 시스템 > 알림 및 작업 → "알림 받기" 활성화 확인
-- "집중 지원" 모드가 활성화되어 있으면 알림이 표시되지 않을 수 있음
+- **"집중 지원" 모드**가 활성화되어 있으면 알림이 표시되지 않을 수 있음
+  - 설정 > 시스템 > 집중 지원 → **"해제"** 선택 권장
+  - "우선 순위만"으로 두면 일반 알림이 알림 센터로만 가고 화면에 안 뜸
+  - "해당 시간 동안" 자동 규칙의 스위치를 끄세요 (끄지 않으면 23:00-07:00 우선 순위만 적용)
 
 ### PC가 잠자기 상태였을 때
 - 스크립트에 `-WakeToRun` 옵션이 있어 PC를 깨워서 실행합니다
