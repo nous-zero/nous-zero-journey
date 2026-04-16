@@ -9,7 +9,7 @@
 
 $RepoRoot        = Split-Path $PSScriptRoot -Parent
 $ClaudeMd        = Join-Path $RepoRoot "CLAUDE.md"
-$GdpoPath        = "C:\Users\745ra\AIGEN\GDPO.py"
+$GdpoPath        = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO.py"
 $GdpoNotebookDir = Join-Path $RepoRoot "Phase0_기초\GDPO_주석"
 
 # URL 경로 인코딩 함수 (한글/특수문자 포함된 경로 처리)
@@ -140,7 +140,7 @@ $TodayLabel = if ($NextProblemNum) {
 Write-Host "📚 오늘의 LeetCode 문제: $TodayLabel"
 Write-Host "🔗 URL: $LeetCodeUrl"
 if ($NextGdpoLine) {
-    Write-Host "📖 오늘의 GDPO 구간: $NextGdpoRange (VS Code에서 라인 $NextGdpoLine로 이동)"
+    Write-Host "📖 오늘의 GDPO 구간: $NextGdpoRange (VS Code에서 라인 ${NextGdpoLine}로 이동)"
 } else {
     Write-Host "📖 GDPO: 모든 구간 완료! 🎉"
 }
