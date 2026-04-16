@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '**/summary.md'
+      - 'logs/**/summary.md'
 
 jobs:
   publish:
@@ -15,16 +15,16 @@ jobs:
       - name: Find latest summary.md
         id: find_summary
         run: |
-          # 가장 최근 날짜 폴더의 summary.md 찾기
-          SUMMARY=$(find . -name 'summary.md' -path '*/20*/*' | sort -r | head -1)
+          # logs/ 안에서 가장 최근 날짜 폴더의 summary.md 찾기
+          SUMMARY=$(find logs -name 'summary.md' -path 'logs/20*/*' 2>/dev/null | sort -r | head -1)
           if [ -z "$SUMMARY" ]; then
-            echo "No summary.md found"
+            echo "No summary.md found under logs/"
             exit 0
           fi
           echo "summary_path=$SUMMARY" >> "$GITHUB_OUTPUT"
 
-          # 날짜 추출
-          DATE_DIR=$(dirname "$SUMMARY" | sed 's|^\./||')
+          # 날짜 추출 (logs/2026-04-15 -> 2026-04-15)
+          DATE_DIR=$(basename "$(dirname "$SUMMARY")")
           echo "date_dir=$DATE_DIR" >> "$GITHUB_OUTPUT"
           echo "Found: $SUMMARY"
 
