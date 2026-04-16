@@ -116,6 +116,21 @@ powershell -ExecutionPolicy Bypass -File ".\scripts\setup-wake-and-notifications
 - ✅ 잠금 화면에 알림 표시 허용
 - ✅ 알림 소리 활성화
 
+### 4. VS Code Workspace Trust 비활성화 (권장)
+
+매번 "Trust this folder?" 묻지 않도록 설정:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\scripts\setup-vscode-trust.ps1"
+```
+
+설정되는 내용:
+- ✅ Restricted Mode 배너 자동 제거
+- ✅ 모든 폴더 자동 신뢰
+- ✅ 모든 파일 편집/실행 즉시 가능
+
+⚠️ 개인 학습 PC에서만 권장. 되돌리려면 VS Code 설정에서 "workspace trust" 검색 → Enabled 체크.
+
 ### 3. 확인
 
 등록이 성공하면 아래 메시지가 표시됩니다:
