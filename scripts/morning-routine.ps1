@@ -231,23 +231,22 @@ if (Test-Path $GdpoPath) {
 
     if ($VSCodeExe) {
         # 공백 포함 경로는 반드시 따옴표로 감싸야 VS Code가 단일 인수로 인식
-        # --disable-workspace-trust: Restricted Mode 배너 안 뜨도록 (안전망)
-        $baseArgs = @("--disable-workspace-trust")
+        # Workspace Trust는 setup-vscode-trust.ps1로 전역 비활성화되므로 여기선 플래그 불필요
         if ($NextGdpoLine) {
             # -g 플래그로 원본 파일의 특정 라인으로 점프
             $gdpoArg = '"{0}:{1}"' -f $GdpoPath, $NextGdpoLine
             # 학습용 파일이 생성되어 있으면 함께 열기 (오른쪽 탭)
             if ($StudyFile -and (Test-Path $StudyFile)) {
                 $studyArg = '"{0}"' -f $StudyFile
-                Start-Process -FilePath $VSCodeExe -ArgumentList ($baseArgs + @("-g", $gdpoArg, $studyArg))
+                Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg, $studyArg
                 Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine + 학습용 파일 함께 열기 완료"
             } else {
-                Start-Process -FilePath $VSCodeExe -ArgumentList ($baseArgs + @("-g", $gdpoArg))
+                Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg
                 Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine 열기 완료"
             }
         } else {
             $gdpoArg = '"{0}"' -f $GdpoPath
-            Start-Process -FilePath $VSCodeExe -ArgumentList ($baseArgs + @($gdpoArg))
+            Start-Process -FilePath $VSCodeExe -ArgumentList $gdpoArg
             Write-Host "✅ VS Code로 GDPO.py 열기 완료 (모든 구간 완료)"
         }
     } else {
@@ -267,7 +266,6 @@ if ($NextGdpoLine) {
 } else {
     Write-Host "   2. GDPO.py 전체 완료! 다음 Phase 준비"
 }
-Write-Host "   3. GitHub 정리 (오후 10:00~10:20)"
 Write-Host ""
 Write-Host "💡 다음 과제로 넘어가려면:"
 Write-Host "   $ClaudeMd 에서 해당 행의 '🔲'을 '✅ 완료'로 수정"
