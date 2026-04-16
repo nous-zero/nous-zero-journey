@@ -131,6 +131,36 @@ powershell -ExecutionPolicy Bypass -File ".\scripts\setup-vscode-trust.ps1"
 
 ⚠️ 개인 학습 PC에서만 권장. 되돌리려면 VS Code 설정에서 "workspace trust" 검색 → Enabled 체크.
 
+### 5. VS Code 한글 주석 색상 구분 (권장)
+
+Better Comments 확장으로 한글 주석을 눈에 띄게 표시:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\scripts\setup-vscode-comments.ps1"
+```
+
+설정되는 내용:
+- ✅ Better Comments 확장 자동 설치
+- ✅ 색상 태그 4개 자동 등록:
+
+| 접두어 | 색상 | 용도 |
+|--------|------|------|
+| `★` | 금색 | 기본 한국어 설명 |
+| `◎` | 시안색 | 핵심 개념/중요 포인트 |
+| `※` | 붉은색 | 주의/경고 |
+| `→` | 연두색 | 처리 흐름/단계 |
+
+### 한글 주석 예시
+
+```python
+if seq_len > target_len:  # ★ 시퀀스 길이가 목표보다 크면 (금색)
+    length_score = max(0.0, ...)  # ◎ 핵심: 길이 페널티 계산 (시안)
+    # ※ 주의: seq_len이 0이면 나눗셈 오류 (빨강)
+    # → 다음: else 블록에서 짧은 경우 처리 (연두)
+```
+
+아침 루틴의 `generate-gdpo-study.ps1`이 자동으로 이 접두어를 사용해서 한글 주석을 생성하므로, 확장만 설치하면 색상이 바로 적용됩니다.
+
 ### 3. 확인
 
 등록이 성공하면 아래 메시지가 표시됩니다:
