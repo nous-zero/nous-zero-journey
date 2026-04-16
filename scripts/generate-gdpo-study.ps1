@@ -80,18 +80,22 @@ if (Test-Path $StudyFile) {
 }
 
 # --- Claude CLI 프롬프트 작성 ---
+# 따옴표(`") 사용 최소화 - PowerShell argument 파서 이슈 방지
+# 임시 파일에 저장해 stdin으로 전달하므로 큰 따옴표도 안전
 $prompt = @"
-아래는 GDPO.py의 ${StartLine}~${EndLine}줄 부분입니다. 박정훈(Python 초보자)이 학습용으로 읽을 수 있도록 **각 줄마다 한국어 주석**을 달아주세요.
+박정훈(Python 초보자)이 학습용으로 읽을 수 있도록, 아래 Python 코드의 각 줄마다 한국어 주석을 추가해주세요.
 
 규칙:
 1. 원본 코드는 그대로 유지 (문자 하나 바꾸지 말 것)
-2. 각 코드 줄 오른쪽에 '# 한국어 설명' 형태로 주석 추가
-3. 이미 영어 주석이 있는 줄은 그 아래에 '# 한국어: ...' 추가
-4. 전문 용어는 괄호로 쉬운 설명 병기 (예: "텐서(행렬 형태의 숫자 묶음)")
-5. 설명 텍스트 없이 **한글 주석이 추가된 Python 코드만** 출력
-6. 마크다운 코드 블록(```) 없이 순수 Python 코드만 출력
+2. 각 코드 줄 오른쪽에 # 형태로 한국어 설명 추가
+3. 이미 영어 주석이 있는 줄은 그 아래에 한국어 설명 추가
+4. 전문 용어는 괄호로 쉬운 설명 병기 (예: 텐서는 행렬 형태의 숫자 묶음)
+5. 설명 텍스트 없이 한글 주석이 추가된 Python 코드만 출력
+6. 마크다운 코드 블록 없이 순수 Python 코드만 출력
+7. 파일 접근 시도 금지 - 코드는 아래에 전부 포함되어 있음
 
-원본 코드:
+GDPO.py ${StartLine}~${EndLine}줄 원본 코드:
+
 $snippet
 "@
 
@@ -107,13 +111,18 @@ if (-not $claudeCmd) {
 Write-Host "🤖 Claude CLI 호출 중... (20~60초 소요)"
 
 # --- Claude CLI 실행 ---
-# 한글 프롬프트는 파이프(|)로 보내면 PowerShell이 ANSI로 인코딩해 깨짐.
-# argument로 직접 전달하면 UTF-8 유지됨.
+# PowerShell 5.1은 argument에 긴 문자열+따옴표가 포함되면 잘리므로,
+# 프롬프트를 UTF-8 임시 파일에 쓰고 stdin으로 전달. 인코딩도 UTF-8 유지.
+$tempInput = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "claude_prompt_$([System.Guid]::NewGuid()).txt")
+[System.IO.File]::WriteAllText($tempInput, $prompt, [System.Text.UTF8Encoding]::new($false))
+
 try {
-    $result = & claude -p $prompt 2>&1 | Out-String
+    # Get-Content로 UTF-8 읽어서 파이프로 전달 ($OutputEncoding은 이미 UTF-8 설정됨)
+    $result = Get-Content -Path $tempInput -Raw -Encoding UTF8 | & claude -p 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Claude CLI 실행 실패 (exit $LASTEXITCODE)" -ForegroundColor Red
         Write-Host $result
+        Remove-Item -Path $tempInput -Force -ErrorAction SilentlyContinue
         exit 1
     }
 
@@ -132,4 +141,7 @@ try {
 } catch {
     Write-Host "❌ 오류 발생: $_" -ForegroundColor Red
     exit 1
+} finally {
+    # 임시 파일 정리
+    Remove-Item -Path $tempInput -Force -ErrorAction SilentlyContinue
 }
