@@ -6,6 +6,8 @@
   - **LeetCode**: CLAUDE.md 로드맵에서 다음에 풀 문제의 페이지
   - **Colab**: `daily-study-template.ipynb` 바로 열림
   - **GitHub**: 레포 메인
+- 📝 **VS Code에서 GDPO.py의 다음 주석 구간으로 바로 점프**
+  - 예: CLAUDE.md의 "101줄~ 🔲"를 읽고 VS Code가 101번 라인으로 커서 이동
 
 ## 오늘 풀 문제는 어떻게 정해지나?
 
@@ -24,15 +26,35 @@
 
 이 상태라면 아침 7시에 `https://leetcode.com/problems/best-time-to-buy-and-sell-stock/`이 열립니다.
 
-## 문제 완료 시 할 일
+## GDPO 다음 구간은 어떻게 정해지나?
 
-문제를 다 풀면 CLAUDE.md에서 해당 행을 직접 수정:
+CLAUDE.md의 **"GDPO.py 코드 읽기"** 섹션도 자동으로 읽습니다:
+
+```markdown
+| 구간 | 상태 |
+|------|------|
+| 1~50줄 | ✅ 완료 |
+| 51~100줄 | ✅ 완료 |
+| 101줄~ | 🔲 |   ← 오늘 작업할 구간
+```
+
+처음 나오는 숫자(101)를 추출해서 VS Code가 **GDPO.py의 101번 라인**으로 커서를 이동시킵니다.
+
+**전제 조건**:
+- GDPO.py 파일이 `C:\Users\745ra\AIGEN\GDPO.py` 에 있어야 함
+- VS Code가 설치되어 있어야 함
+- 경로가 다르면 `scripts/morning-routine.ps1` 상단의 `$GdpoPath` 수정
+
+## 완료 시 할 일 (LeetCode + GDPO 공통)
+
+CLAUDE.md에서 해당 행을 직접 수정:
 
 ```markdown
 | Day 3 | #121 Best Time to Buy/Sell Stock | ✅ 완료 |
+| 101~150줄 | ✅ 완료 |
 ```
 
-다음날 아침부터 자동으로 다음 🔲 문제가 열립니다.
+다음날 아침부터 자동으로 다음 🔲 과제가 열립니다.
 
 ## 설정 방법 (1회만 실행)
 

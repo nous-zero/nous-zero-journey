@@ -9,6 +9,7 @@
 
 $RepoRoot   = Split-Path $PSScriptRoot -Parent
 $ClaudeMd   = Join-Path $RepoRoot "CLAUDE.md"
+$GdpoPath   = "C:\Users\745ra\AIGEN\GDPO.py"
 
 # --- LeetCode 문제 번호 -> URL slug 매핑 (CLAUDE.md 로드맵 전체) ---
 $ProblemSlugs = @{
@@ -49,34 +50,48 @@ $NextProblemName  = $null
 $NextDayLabel     = "Day ?"
 $LeetCodeUrl      = "https://leetcode.com/problemset/"
 
+$NextGdpoLine  = $null
+$NextGdpoRange = "미결정"
+
 if (Test-Path $ClaudeMd) {
-    $inLeetCodeSection = $false
+    $section = ""
     foreach ($line in (Get-Content $ClaudeMd -Encoding UTF8)) {
-        # LeetCode 섹션 시작 감지
+        # 섹션 감지
         if ($line -match "^### LeetCode") {
-            $inLeetCodeSection = $true
+            $section = "leetcode"
             continue
         }
-        # 다음 ### 섹션이 오면 LeetCode 섹션 종료
-        if ($inLeetCodeSection -and $line -match "^### ") {
-            break
+        if ($line -match "^### GDPO") {
+            $section = "gdpo"
+            continue
         }
-        # 🔲 상태 (미완료)인 첫 번째 행 찾기
-        if ($inLeetCodeSection -and $line -match "🔲") {
-            # 예: "| Day 2 | #217 Contains Duplicate | 🔲 |"
+        # 다음 ### 섹션이 오면 현재 섹션 종료
+        if ($section -and $line -match "^### " -and $line -notmatch "LeetCode|GDPO") {
+            $section = ""
+        }
+
+        # LeetCode: 🔲 상태(미완료) 첫 번째 행
+        if ($section -eq "leetcode" -and $line -match "🔲" -and -not $NextProblemNum) {
             if ($line -match '\|\s*(Day[^|]+?)\s*\|\s*#(\d+)\s+([^|]+?)\s*\|') {
                 $NextDayLabel    = $matches[1].Trim()
                 $NextProblemNum  = $matches[2]
                 $NextProblemName = $matches[3].Trim()
-                break
             }
-            # 여러 문제가 있는 행 (예: "문자열 단계 (#9 #14 #13 #58 #28)")
-            # 첫 번째 번호만 추출
             elseif ($line -match '\|\s*(Day[^|]+?)\s*\|.*?#(\d+)') {
                 $NextDayLabel    = $matches[1].Trim()
                 $NextProblemNum  = $matches[2]
                 $NextProblemName = "다음 단계 시작"
-                break
+            }
+        }
+
+        # GDPO: 🔲 상태(미완료) 첫 번째 행
+        if ($section -eq "gdpo" -and $line -match "🔲" -and -not $NextGdpoLine) {
+            # 예: "| 101줄~ | 🔲 |" 또는 "| 101~150줄 | 🔲 |"
+            if ($line -match '\|\s*(\d+)') {
+                $NextGdpoLine = $matches[1]
+                if ($line -match '\|\s*([\d~줄-]+)\s*\|') {
+                    $NextGdpoRange = $matches[1].Trim()
+                }
             }
         }
     }
@@ -95,6 +110,11 @@ $TodayLabel = if ($NextProblemNum) {
 
 Write-Host "📚 오늘의 LeetCode 문제: $TodayLabel"
 Write-Host "🔗 URL: $LeetCodeUrl"
+if ($NextGdpoLine) {
+    Write-Host "📖 오늘의 GDPO 구간: $NextGdpoRange (VS Code에서 라인 $NextGdpoLine로 이동)"
+} else {
+    Write-Host "📖 GDPO: 모든 구간 완료! 🎉"
+}
 
 # --- 1. Windows Toast 알림 ---
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
@@ -105,6 +125,7 @@ $AppId = "Nous-Zero.MorningRoutine"
 
 # XML 특수문자 escape
 $SafeLabel = $TodayLabel -replace '&', '&amp;' -replace '<', '&lt;' -replace '>', '&gt;'
+$SafeGdpo  = if ($NextGdpoLine) { "GDPO $NextGdpoRange" } else { "GDPO 완료" }
 
 $ToastXml = @"
 <toast duration="long" scenario="alarm">
@@ -112,7 +133,7 @@ $ToastXml = @"
         <binding template="ToastGeneric">
             <text>☀️ 좋은 아침 Hoony님! 오늘도 화이팅</text>
             <text>오늘의 문제: $SafeLabel</text>
-            <text>LeetCode + Colab 템플릿 + GitHub을 열었습니다 📚</text>
+            <text>$SafeGdpo · LeetCode · Colab · GitHub을 열었습니다 📚</text>
         </binding>
     </visual>
     <audio src="ms-winsoundevent:Notification.Looping.Alarm" loop="true" />
@@ -167,11 +188,43 @@ if ($ChromeExe) {
     Write-Host "⚠️ Chrome을 찾지 못해 기본 브라우저로 열었습니다"
 }
 
+# --- 3. VS Code로 GDPO.py 해당 라인으로 바로 점프 ---
+if (Test-Path $GdpoPath) {
+    # VS Code 실행 파일 찾기 (설치 위치가 다양함)
+    $VSCodePaths = @(
+        "${env:LOCALAPPDATA}\Programs\Microsoft VS Code\Code.exe",
+        "${env:ProgramFiles}\Microsoft VS Code\Code.exe",
+        "${env:ProgramFiles(x86)}\Microsoft VS Code\Code.exe"
+    )
+    $VSCodeExe = $VSCodePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+    if ($VSCodeExe) {
+        if ($NextGdpoLine) {
+            # -g 플래그로 특정 라인으로 점프
+            Start-Process -FilePath $VSCodeExe -ArgumentList @("-g", "${GdpoPath}:${NextGdpoLine}")
+            Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine 열기 완료"
+        } else {
+            Start-Process -FilePath $VSCodeExe -ArgumentList @($GdpoPath)
+            Write-Host "✅ VS Code로 GDPO.py 열기 완료 (모든 구간 완료)"
+        }
+    } else {
+        # VS Code가 없으면 기본 앱으로 열기
+        Start-Process $GdpoPath
+        Write-Host "⚠️ VS Code를 찾지 못해 기본 연결 앱으로 열었습니다"
+    }
+} else {
+    Write-Host "⚠️ GDPO.py를 찾을 수 없습니다: $GdpoPath"
+}
+
 Write-Host ""
 Write-Host "🎯 오늘의 체크리스트:"
 Write-Host "   1. $TodayLabel 풀기 (오전 7:00~7:30)"
-Write-Host "   2. GDPO.py 50줄 주석 (오전 8:30~9:00)"
+if ($NextGdpoLine) {
+    Write-Host "   2. GDPO.py $NextGdpoRange 한국어 주석 (오전 8:30~9:00)"
+} else {
+    Write-Host "   2. GDPO.py 전체 완료! 다음 Phase 준비"
+}
 Write-Host "   3. GitHub 정리 (오후 10:00~10:20)"
 Write-Host ""
-Write-Host "💡 다음 문제로 넘어가려면:"
-Write-Host "   $ClaudeMd 에서 해당 Day 행의 '🔲'을 '✅ 완료'로 수정"
+Write-Host "💡 다음 과제로 넘어가려면:"
+Write-Host "   $ClaudeMd 에서 해당 행의 '🔲'을 '✅ 완료'로 수정"
