@@ -52,21 +52,21 @@ if (Test-Path $SettingsPath) {
     }
 }
 
-# Better Comments 태그: 한글 주석 접두어별로 다른 색상
-# 사용 방법: # ★ 한국어 설명 / # ※ 경고 / # ◎ 핵심 개념
+# Better Comments 태그: 눈에 편한 부드러운(muted) 팔레트 사용
+# 사용 방법: # ★ 한국어 설명 / # ※ 경고 / # ◎ 핵심 개념 / # → 흐름
 $betterCommentsTags = @(
     @{
         "tag"             = "★"
-        "color"           = "#FFD700"    # 금색 - 한글 주석 (기본)
+        "color"           = "#B8A082"    # 부드러운 샌드스톤 (기본 한글 주석)
         "strikethrough"   = $false
         "underline"       = $false
         "backgroundColor" = "transparent"
-        "bold"            = $true
+        "bold"            = $false
         "italic"          = $false
     },
     @{
         "tag"             = "◎"
-        "color"           = "#00E5FF"    # 시안 - 핵심 개념
+        "color"           = "#7A9BB0"    # 부드러운 스틸블루 (핵심 개념)
         "strikethrough"   = $false
         "underline"       = $false
         "backgroundColor" = "transparent"
@@ -75,16 +75,16 @@ $betterCommentsTags = @(
     },
     @{
         "tag"             = "※"
-        "color"           = "#FF6B6B"    # 붉은색 - 주의/경고
+        "color"           = "#B58080"    # 부드러운 로즈 (주의/경고)
         "strikethrough"   = $false
         "underline"       = $false
         "backgroundColor" = "transparent"
-        "bold"            = $true
+        "bold"            = $false
         "italic"          = $false
     },
     @{
         "tag"             = "→"
-        "color"           = "#98FB98"    # 연두색 - 흐름/단계
+        "color"           = "#8AAB8A"    # 부드러운 모스 그린 (흐름/단계)
         "strikethrough"   = $false
         "underline"       = $false
         "backgroundColor" = "transparent"
@@ -100,11 +100,11 @@ $settings["better-comments.multilineComments"] = $true
 $json = $settings | ConvertTo-Json -Depth 10
 [System.IO.File]::WriteAllText($SettingsPath, $json, [System.Text.UTF8Encoding]::new($false))
 
-Write-Host "    ✅ 색상 태그 4개 등록:" -ForegroundColor Green
-Write-Host "       ★ 금색 (기본 한글 주석)"
-Write-Host "       ◎ 시안 (핵심 개념)"
-Write-Host "       ※ 붉은색 (주의/경고)"
-Write-Host "       → 연두색 (흐름/단계)"
+Write-Host "    ✅ 색상 태그 4개 등록 (눈에 편한 muted 팔레트):" -ForegroundColor Green
+Write-Host "       ★ 샌드스톤 (기본 한글 주석)"
+Write-Host "       ◎ 스틸블루 (핵심 개념)"
+Write-Host "       ※ 로즈 (주의/경고)"
+Write-Host "       → 모스그린 (흐름/단계)"
 
 Write-Host ""
 Write-Host "================================" -ForegroundColor Cyan
