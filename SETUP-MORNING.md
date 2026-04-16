@@ -3,21 +3,36 @@
 매일 아침 **7시**에 자동으로:
 - 💻 Windows 알림 표시 (알람 소리 반복)
 - 🌐 Chrome에서 3개 탭 열기:
-  - **LeetCode**: `CURRENT_TOPIC.txt`에 적힌 주제의 태그 페이지
+  - **LeetCode**: CLAUDE.md 로드맵에서 다음에 풀 문제의 페이지
   - **Colab**: `daily-study-template.ipynb` 바로 열림
   - **GitHub**: 레포 메인
 
-## 학습 주제 바꾸기
+## 오늘 풀 문제는 어떻게 정해지나?
 
-레포 루트의 `CURRENT_TOPIC.txt` 파일을 수정하면 됩니다:
+레포 루트의 **CLAUDE.md** 파일을 스크립트가 자동으로 읽습니다.
+"LeetCode" 섹션의 표에서 **처음 나오는 🔲 상태 행의 문제**가 오늘의 문제입니다.
 
+### 예시
+
+```markdown
+| Day | 문제 | 상태 |
+|-----|------|------|
+| Day 1 | #1 Two Sum | ✅ 완료 |
+| Day 2 | #217 Contains Duplicate | ✅ 완료 |
+| Day 3 | #121 Best Time to Buy/Sell Stock | 🔲 |   ← 오늘 풀 문제
 ```
-Array
+
+이 상태라면 아침 7시에 `https://leetcode.com/problems/best-time-to-buy-and-sell-stock/`이 열립니다.
+
+## 문제 완료 시 할 일
+
+문제를 다 풀면 CLAUDE.md에서 해당 행을 직접 수정:
+
+```markdown
+| Day 3 | #121 Best Time to Buy/Sell Stock | ✅ 완료 |
 ```
 
-바꿀 수 있는 값: `Array` / `String` / `Stack` / `LinkedList` / `HashMap` / `BinarySearch` / `GDPO_주석`
-
-다음날 아침부터 자동으로 새 주제의 LeetCode 페이지가 열립니다.
+다음날 아침부터 자동으로 다음 🔲 문제가 열립니다.
 
 ## 설정 방법 (1회만 실행)
 
