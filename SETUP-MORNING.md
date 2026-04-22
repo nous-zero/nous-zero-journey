@@ -19,14 +19,22 @@
 
 VS Code가 **두 파일을 동시에 열어** 나란히 비교하며 학습 가능합니다.
 
-### 작동 방식
+### 작동 방식 (실행 순서 - 복원력 설계)
 
-1. `morning-routine.ps1`이 `generate-gdpo-study.ps1` 호출
-2. CLAUDE.md에서 다음 🔲 구간 파싱 (예: 101~150줄)
-3. GDPO.py에서 해당 구간 추출
-4. `claude -p` (Claude CLI) 명령으로 한글 주석 생성 요청
-5. 결과를 `C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO_학습용_101-150.py`로 저장
-6. VS Code에 원본 + 학습용 파일 동시에 열기
+**1단계: 즉시 열리는 것들 (실패 안 함)**
+1. Windows Toast 알림 표시
+2. Chrome 3개 탭 열기 (LeetCode, Colab, GitHub)
+3. VS Code로 GDPO.py 열기 (다음 구간 라인으로 자동 점프)
+   - 어제 생성한 학습용 파일이 있으면 함께 열기
+
+**2단계: 백그라운드 생성 (실패해도 루틴 완료됨)**
+4. CLAUDE.md에서 다음 🔲 구간 파싱 (예: 101~150줄)
+5. GDPO.py에서 해당 구간 추출
+6. `claude -p` (Claude CLI)로 한글 주석 생성 요청 (최대 **90초** 대기)
+7. 생성 성공 시 → VS Code에 추가 탭으로 열기
+8. 타임아웃/실패 시 → 경고 메시지만 남기고 계속 진행
+
+> 💡 **설계 의도**: Claude CLI 생성이 네트워크/인증 문제로 실패해도 Chrome과 VS Code는 이미 열려 있어 **학습을 바로 시작할 수 있습니다**.
 
 ### 학습 흐름
 
@@ -70,13 +78,13 @@ CLAUDE.md의 **"GDPO.py 코드 읽기"** 섹션도 자동으로 읽습니다:
 |------|------|
 | 1~50줄 | ✅ 완료 |
 | 51~100줄 | ✅ 완료 |
-| 101줄~ | 🔲 |   ← 오늘 작업할 구간
+| 101~150줄 | 🔲 |   ← 오늘 작업할 구간
 ```
 
 처음 나오는 숫자(101)를 추출해서 VS Code가 **GDPO.py의 101번 라인**으로 커서를 이동시킵니다.
 
 **전제 조건**:
-- GDPO.py 파일이 `C:\Users\745ra\AIGEN\GDPO.py` 에 있어야 함
+- GDPO.py 파일이 `C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO.py` 에 있어야 함
 - VS Code가 설치되어 있어야 함
 - 경로가 다르면 `scripts/morning-routine.ps1` 상단의 `$GdpoPath` 수정
 
@@ -164,14 +172,6 @@ if seq_len > target_len:  # ★ 시퀀스 길이가 목표보다 크면 (금색)
 
 아침 루틴의 `generate-gdpo-study.ps1`이 자동으로 이 접두어를 사용해서 한글 주석을 생성하므로, 확장만 설치하면 색상이 바로 적용됩니다.
 
-### 3. 확인
-
-등록이 성공하면 아래 메시지가 표시됩니다:
-```
-✅ 등록 완료!
-내일 아침 07:00 에 자동으로 실행됩니다.
-```
-
 ## 바로 테스트
 
 내일까지 기다리지 않고 지금 테스트하려면:
@@ -215,6 +215,38 @@ Unregister-ScheduledTask -TaskName "NousZero-MorningRoutine" -Confirm:$false
 
 또는 작업 스케줄러 앱에서 `NousZero-MorningRoutine` 검색 → 삭제
 
+## 📋 진단 및 로그
+
+모든 아침 루틴 실행은 **`%USERPROFILE%\morning-routine.log`** 에 자동 기록됩니다.
+
+### 로그 확인 명령
+
+```powershell
+# 최근 100줄 보기
+Get-Content "$env:USERPROFILE\morning-routine.log" -Tail 100
+
+# 실시간으로 보기 (루틴 실행 중 모니터링)
+Get-Content "$env:USERPROFILE\morning-routine.log" -Wait -Tail 30
+```
+
+### 작업 스케줄러 결과 확인
+
+```powershell
+Get-ScheduledTaskInfo -TaskName "NousZero-MorningRoutine" |
+    Format-List LastRunTime, LastTaskResult, NextRunTime
+```
+
+| 결과 코드 | 의미 |
+|-----------|------|
+| `0` | 정상 완료 |
+| `267011` | 트리거 시 PC가 꺼져있어서 실행 안 됨 |
+| `3221225786` (0xC000013A) | 스크립트가 강제 종료됨 (CTRL+C) |
+| 기타 | 로그 파일에서 상세 확인 |
+
+### 로그 로테이션
+
+파일이 1MB를 넘으면 최근 500줄만 유지되므로 **수동 정리 불필요**합니다.
+
 ## 문제 해결
 
 ### 알림이 안 뜸
@@ -231,6 +263,16 @@ Unregister-ScheduledTask -TaskName "NousZero-MorningRoutine" -Confirm:$false
 ### Chrome이 열리지 않음
 - 기본 브라우저로 대신 열립니다 (fallback 동작)
 - Chrome 설치 경로가 비표준이면 `morning-routine.ps1`의 `$ChromePaths`에 경로 추가
+
+### VS Code가 안 열리거나 학습용 파일이 생성 안 됨
+새 구조에서는 **VS Code가 Claude CLI보다 먼저** 실행되므로 VS Code는 거의 항상 열립니다.
+
+학습용 한글 주석 파일 생성만 실패하는 경우:
+- 로그 확인: `Get-Content "$env:USERPROFILE\morning-routine.log" -Tail 30`
+- "타임아웃 (90초 초과)" 메시지가 있으면:
+  - Claude CLI 인증 상태 확인: `claude auth status`
+  - 수동 생성: `powershell -ExecutionPolicy Bypass -File "C:\Users\745ra\nous-zero-journey\scripts\generate-gdpo-study.ps1"`
+- 네트워크 연결 확인 (Claude API 호출 필요)
 
 ### 실행 정책 오류
 PowerShell에서 `ExecutionPolicy` 오류가 나면:

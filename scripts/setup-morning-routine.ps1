@@ -39,7 +39,11 @@ $Settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
-    -WakeToRun
+    -WakeToRun `
+    -ExecutionTimeLimit (New-TimeSpan -Minutes 10) `
+    -RestartCount 1 `
+    -RestartInterval (New-TimeSpan -Minutes 2) `
+    -MultipleInstances IgnoreNew
 
 $Principal = New-ScheduledTaskPrincipal `
     -UserId $env:USERNAME `
@@ -57,6 +61,11 @@ try {
 
     Write-Host ""
     Write-Host "✅ 등록 완료!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "적용된 복원력 설정:" -ForegroundColor Cyan
+    Write-Host "   - ExecutionTimeLimit: 10분 (넘으면 자동 종료)"
+    Write-Host "   - RestartCount: 실패 시 1회 재시도 (2분 후)"
+    Write-Host "   - MultipleInstances: 중복 실행 방지"
     Write-Host ""
     Write-Host "내일 아침 $TriggerTime 에 자동으로 실행됩니다."
     Write-Host ""
