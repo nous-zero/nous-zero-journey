@@ -8,6 +8,21 @@
 # - VS Code: 원본 GDPO.py + 한글 주석 학습용 파일 함께 열기
 # ================================================
 
+# --- 로깅 시작 (진단용) ---
+# 로그 위치: %USERPROFILE%\morning-routine.log (최근 10회분 유지)
+$LogPath = Join-Path $env:USERPROFILE "morning-routine.log"
+try {
+    # 로그 파일이 1MB 넘으면 rotate (오래된 부분 제거)
+    if ((Test-Path $LogPath) -and ((Get-Item $LogPath).Length -gt 1MB)) {
+        $tail = Get-Content $LogPath -Tail 500
+        $tail | Set-Content $LogPath -Encoding UTF8
+    }
+    Start-Transcript -Path $LogPath -Append -Force -ErrorAction SilentlyContinue | Out-Null
+    Write-Host "`n========== 아침 루틴 시작: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') =========="
+} catch {
+    # 로그 시작 실패해도 본 루틴은 계속
+}
+
 $RepoRoot = Split-Path $PSScriptRoot -Parent
 $ClaudeMd = Join-Path $RepoRoot "CLAUDE.md"
 $GdpoPath = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO.py"
@@ -194,10 +209,9 @@ if ($ChromeExe) {
     Write-Host "⚠️ Chrome을 찾지 못해 기본 브라우저로 열었습니다"
 }
 
-# --- 3a. 학습용 한글 주석 파일 자동 생성 (Claude CLI 사용) ---
+# --- 3a. 학습용 파일 경로 계산 (기존 파일 유무 확인) ---
 $StudyFile = $null
 if ($NextGdpoLine) {
-    # 종료 라인 계산 (CLAUDE.md에서 "101~150줄" 파싱)
     $NextGdpoEnd = $null
     if ($NextGdpoRange -match '(\d+)\s*~\s*(\d+)') {
         $NextGdpoEnd = [int]$matches[2]
@@ -205,23 +219,12 @@ if ($NextGdpoLine) {
         $NextGdpoEnd = [int]$NextGdpoLine + 49
     }
     $StudyFile = "C:\Users\745ra\OneDrive\바탕 화면\BIO\코드\GDPO_학습용_${NextGdpoLine}-${NextGdpoEnd}.py"
-
-    if (-not (Test-Path $StudyFile)) {
-        Write-Host ""
-        Write-Host "🤖 학습용 한글 주석 파일 생성 중 (처음 한 번, 20~60초 소요)..."
-        try {
-            & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "generate-gdpo-study.ps1")
-        } catch {
-            Write-Host "⚠️ 학습용 파일 생성 실패: $_" -ForegroundColor Yellow
-        }
-    } else {
-        Write-Host "📘 학습용 파일 준비됨: GDPO_학습용_${NextGdpoLine}-${NextGdpoEnd}.py"
-    }
 }
 
-# --- 3b. VS Code로 GDPO.py 해당 라인으로 바로 점프 + 학습용 파일 함께 열기 ---
+# --- 3b. VS Code 먼저 열기 (Claude CLI와 무관하게 항상 성공) ---
+# Claude CLI가 실패해도 원본 GDPO.py는 열려야 함
+$VSCodeExe = $null
 if (Test-Path $GdpoPath) {
-    # VS Code 실행 파일 찾기 (설치 위치가 다양함)
     $VSCodePaths = @(
         "${env:LOCALAPPDATA}\Programs\Microsoft VS Code\Code.exe",
         "${env:ProgramFiles}\Microsoft VS Code\Code.exe",
@@ -230,19 +233,16 @@ if (Test-Path $GdpoPath) {
     $VSCodeExe = $VSCodePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
 
     if ($VSCodeExe) {
-        # 공백 포함 경로는 반드시 따옴표로 감싸야 VS Code가 단일 인수로 인식
-        # Workspace Trust는 setup-vscode-trust.ps1로 전역 비활성화되므로 여기선 플래그 불필요
         if ($NextGdpoLine) {
-            # -g 플래그로 원본 파일의 특정 라인으로 점프
             $gdpoArg = '"{0}:{1}"' -f $GdpoPath, $NextGdpoLine
-            # 학습용 파일이 생성되어 있으면 함께 열기 (오른쪽 탭)
+            # 기존 학습용 파일이 이미 있으면 함께 열기
             if ($StudyFile -and (Test-Path $StudyFile)) {
                 $studyArg = '"{0}"' -f $StudyFile
                 Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg, $studyArg
-                Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine + 학습용 파일 함께 열기 완료"
+                Write-Host "✅ VS Code: GDPO.py 라인 $NextGdpoLine + 기존 학습용 파일 함께 열기"
             } else {
                 Start-Process -FilePath $VSCodeExe -ArgumentList "-g", $gdpoArg
-                Write-Host "✅ VS Code로 GDPO.py 라인 $NextGdpoLine 열기 완료"
+                Write-Host "✅ VS Code: GDPO.py 라인 $NextGdpoLine 열기 (학습용 파일은 생성 후 추가로 열림)"
             }
         } else {
             $gdpoArg = '"{0}"' -f $GdpoPath
@@ -250,12 +250,44 @@ if (Test-Path $GdpoPath) {
             Write-Host "✅ VS Code로 GDPO.py 열기 완료 (모든 구간 완료)"
         }
     } else {
-        # VS Code가 없으면 기본 앱으로 열기
         Start-Process $GdpoPath
         Write-Host "⚠️ VS Code를 찾지 못해 기본 연결 앱으로 열었습니다"
     }
 } else {
     Write-Host "⚠️ GDPO.py를 찾을 수 없습니다: $GdpoPath"
+}
+
+# --- 3c. 학습용 한글 주석 파일 생성 (Claude CLI) - 타임아웃 및 격리 실행 ---
+# 이 단계가 실패해도 위에서 이미 VS Code/Chrome이 열려있어 루틴 완료 상태
+if ($NextGdpoLine -and $StudyFile -and -not (Test-Path $StudyFile)) {
+    Write-Host ""
+    Write-Host "🤖 학습용 한글 주석 파일 생성 시도 (최대 90초 대기)..."
+    $claudeJob = Start-Job -ScriptBlock {
+        param($ScriptPath)
+        & powershell -ExecutionPolicy Bypass -File $ScriptPath 2>&1
+    } -ArgumentList (Join-Path $PSScriptRoot "generate-gdpo-study.ps1")
+
+    # 최대 90초 대기 (Claude CLI 응답 시간 여유)
+    if (Wait-Job $claudeJob -Timeout 90) {
+        $output = Receive-Job $claudeJob
+        Remove-Job $claudeJob
+        Write-Host "   $output"
+
+        # 생성 성공 시 VS Code에 추가 탭으로 열기
+        if ((Test-Path $StudyFile) -and $VSCodeExe) {
+            $studyArg = '"{0}"' -f $StudyFile
+            Start-Process -FilePath $VSCodeExe -ArgumentList $studyArg
+            Write-Host "✅ 생성된 학습용 파일을 VS Code에 추가 탭으로 열기 완료"
+        }
+    } else {
+        # 타임아웃 - Job 강제 종료
+        Stop-Job $claudeJob
+        Remove-Job $claudeJob -Force
+        Write-Host "⚠️ 학습용 파일 생성 타임아웃 (90초 초과) - 나머지 루틴은 정상 완료" -ForegroundColor Yellow
+        Write-Host "   수동 생성: powershell -ExecutionPolicy Bypass -File `"$PSScriptRoot\generate-gdpo-study.ps1`""
+    }
+} elseif ($StudyFile -and (Test-Path $StudyFile)) {
+    Write-Host "📘 학습용 파일 재사용: GDPO_학습용_${NextGdpoLine}-${NextGdpoEnd}.py"
 }
 
 Write-Host ""
@@ -269,3 +301,11 @@ if ($NextGdpoLine) {
 Write-Host ""
 Write-Host "💡 다음 과제로 넘어가려면:"
 Write-Host "   $ClaudeMd 에서 해당 행의 '🔲'을 '✅ 완료'로 수정"
+
+Write-Host ""
+Write-Host "========== 아침 루틴 종료: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') =========="
+
+# --- 로깅 종료 ---
+try {
+    Stop-Transcript -ErrorAction SilentlyContinue | Out-Null
+} catch {}
