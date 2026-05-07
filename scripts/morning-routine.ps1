@@ -183,12 +183,12 @@ try {
 
 # --- 2. Chrome에서 3개 탭을 한 창에 열기 ---
 # 탭 1: LeetCode 오늘의 문제
-# 탭 2: Colab 빈 템플릿 (새 작업용)
-# 탭 3: GitHub 레포 메인 (과거 주석 노트북은 여기서 탐색)
+# 탭 2: Colab 노트북 #1 (개인 드라이브 - 학습용)
+# 탭 3: Colab 노트북 #2 (개인 드라이브 - 학습용)
 $Urls = @(
     $LeetCodeUrl,
-    "https://colab.research.google.com/github/nous-zero/nous-zero-journey/blob/main/templates/daily-study-template.ipynb",
-    "https://github.com/nous-zero/nous-zero-journey"
+    "https://colab.research.google.com/drive/1ZAVBL3SsyYZ9ABn1AzU4KOCi20btuPDM",
+    "https://colab.research.google.com/drive/1-u7sl0jOLjA95-0g4vdO1e42QCHjGj8M"
 )
 
 $ChromePaths = @(
